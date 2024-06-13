@@ -5,6 +5,7 @@ export enum Symbol {
   MINUS = '-',
   EQUAL = '=',
   DECIMAL = '.',
+  CLEAR = 'Clear',
 }
 
 const Operators: string[] = [
@@ -12,7 +13,6 @@ const Operators: string[] = [
   Symbol.MULTIPLY,
   Symbol.ADD,
   Symbol.MINUS,
-  Symbol.EQUAL,
 ];
 
 export const isOperator = (input: string | number) => {
@@ -25,14 +25,11 @@ export const isNumber = (input: string | undefined) => {
 
 export const createExpression = (rawInput: string) => {
   // replace operator symbols with actual mathematical operators
-  console.log('raw string', rawInput);
   const formattedString = rawInput
     .replaceAll(Symbol.DIVIDE, '/')
     .replaceAll(Symbol.MULTIPLY, '*')
     .replaceAll(Symbol.ADD, '+')
     .replaceAll(Symbol.MINUS, '-');
-
-  console.log('formattedString', formattedString);
 
   return formattedString;
 };

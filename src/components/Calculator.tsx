@@ -1,9 +1,16 @@
 import styled from '@emotion/styled';
-import { Button } from './Button';
-import { Colors, Symbol, createExpression, isNumber } from 'src/utils';
+import { CalculatorButton } from './CalculatorButton';
+import {
+  Colors,
+  Symbol,
+  createExpression,
+  isNumber,
+  isOperator,
+} from 'src/utils';
 import { useCallback, useState } from 'react';
 import { Output } from './Output';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import { Debug } from './Debug';
 
 const Container = styled.div({
   border: '1px solid black',
@@ -21,15 +28,18 @@ const ButtonsGrid = styled.div({
 });
 
 const BUTTON_ROWS = [
+  'Clear', // takes up three column widths (see Button css)
+  Symbol.DIVIDE,
+
   7,
   8,
   9,
-  Symbol.DIVIDE,
+  Symbol.MULTIPLY,
 
   4,
   5,
   6,
-  Symbol.MULTIPLY,
+  Symbol.MINUS,
 
   1,
   2,
@@ -42,14 +52,31 @@ const BUTTON_ROWS = [
 ];
 
 export const Calculator = () => {
+  const [leftOperand, setLeftOperand] = useState('');
+  const [rightOperand, setRightOperand] = useState('');
+  const [operator, setOperator] = useState('');
+
   const [input, setInput] = useState('');
 
+  const handleClear = useCallback(() => {
+    setInput('');
+    setOperator('');
+    setLeftOperand('');
+    setRightOperand('');
+  }, []);
+
   const submit = useCallback(async () => {
+    console.log('submit', {
+      leftOperand,
+      operator,
+      rightOperand,
+    });
+
     try {
       const { data } = await axios.post(
         'http://api.mathjs.org/v4/',
         {
-          expr: createExpression(input),
+          expr: createExpression(`${leftOperand} ${operator} ${rightOperand}`),
         },
         {
           headers: {
@@ -57,9 +84,14 @@ export const Calculator = () => {
           },
         }
       );
-      console.log('oh yay!', data);
+
+      const { result } = data;
+
+      setLeftOperand(result);
+      setInput(result);
+      setOperator('');
+      setRightOperand('');
     } catch (err) {
-      console.log('oh no!', err);
       alert(
         [
           `[${(err as any)?.response?.status}]`,
@@ -69,50 +101,72 @@ export const Calculator = () => {
         ].join(' ')
       );
     }
-  }, [input]);
+  }, [leftOperand, operator, rightOperand]);
 
   const handleButtonClick = useCallback(
-    (value: string) => {
+    async (value: string) => {
+      if (value === Symbol.CLEAR) {
+        return handleClear();
+      }
       if (value === Symbol.EQUAL) {
         return submit();
       }
 
-      return setInput((prev) => {
-        const parts = prev.split(' ');
+      if (isOperator(value) && operator && rightOperand) {
+        // calculate first
+        await submit();
 
-        const lastPart = parts.pop();
+        return setOperator(value);
+      } else if (isOperator(value)) {
+        return setOperator(value);
+      }
 
-        if (isNumber(lastPart) && isNumber(value)) {
-          // concat new number to previous number
-          return [...parts, `${lastPart}${value}`].join(' ');
-        }
+      let newInput = input;
 
-        if (
-          lastPart?.split('')?.includes(Symbol.DECIMAL) &&
-          value === Symbol.DECIMAL
-        ) {
-          // no-op multiple decimal inputs
-          return [...parts, lastPart].join(' ');
-        }
+      if (operator && !rightOperand) {
+        // reset input when switching to rightOperand
+        newInput = '';
+      }
 
-        if (isNumber(lastPart) && value === Symbol.DECIMAL) {
-          // concat decimal to previous number
-          return [...parts, `${lastPart}${value}`].join(' ');
-        }
+      if (isNumber(newInput) && isNumber(value)) {
+        // concat new number to previous number
+        newInput = `${newInput}${value}`;
+      } else if (
+        newInput.includes(Symbol.DECIMAL) &&
+        value === Symbol.DECIMAL
+      ) {
+        // no-op multiple decimal inputs
+        newInput = newInput;
+      } else if (isNumber(newInput) && value === Symbol.DECIMAL) {
+        // contact decimal to existing number
+        newInput = `${newInput}${value}`;
+      } else {
+        newInput = `${value}`;
+      }
 
-        return [...parts, lastPart, value].join(' ');
-      });
+      setInput(newInput);
+
+      if (leftOperand && operator) {
+        setRightOperand(newInput);
+      } else if (!operator) {
+        setLeftOperand(newInput);
+      }
     },
-    [submit]
+    [handleClear, input, leftOperand, operator, rightOperand, submit]
   );
 
   return (
     <Container>
-      <button onClick={() => setInput('')}>clear</button>
+      <Debug
+        leftOperand={leftOperand}
+        rightOperand={rightOperand}
+        operator={operator}
+      />
+
       <Output text={input} />
       <ButtonsGrid>
         {BUTTON_ROWS.map((value) => (
-          <Button
+          <CalculatorButton
             key={value}
             value={value}
             onClick={() => handleButtonClick(value as string)}

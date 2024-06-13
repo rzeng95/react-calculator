@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { Colors, isOperator } from 'src/utils';
+import { Symbol, Colors, isOperator } from 'src/utils';
 
 interface Props {
   value: number | string;
@@ -7,15 +7,16 @@ interface Props {
 }
 
 interface ContainerProps {
+  value: number | string;
   isZero: boolean;
   isSymbol: boolean;
 }
 
-const Container = styled.div(({ isZero, isSymbol }: ContainerProps) => ({
+const Container = styled.div(({ value, isZero, isSymbol }: ContainerProps) => ({
   width: '100%',
   height: '100px',
   border: '1px solid black',
-  borderRadius: isZero ? '30px' : '50%',
+  borderRadius: isZero || value === Symbol.CLEAR ? '30px' : '50%',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -25,7 +26,7 @@ const Container = styled.div(({ isZero, isSymbol }: ContainerProps) => ({
   },
   cursor: 'pointer',
   transition: '0.2s',
-  gridColumn: isZero ? 'span 2' : 'span 1',
+  gridColumn: value === Symbol.CLEAR ? 'span 3' : isZero ? 'span 2' : 'span 1',
 }));
 
 const Value = styled.div({
@@ -34,11 +35,12 @@ const Value = styled.div({
   color: Colors.WHITE,
 });
 
-export const Button = ({ value, onClick }: Props) => {
+export const CalculatorButton = ({ value, onClick }: Props) => {
   return (
     <Container
+      value={value}
       isZero={value === 0}
-      isSymbol={isOperator(value)}
+      isSymbol={isOperator(value) || value === Symbol.EQUAL}
       onClick={onClick}
     >
       <Value>{value}</Value>
