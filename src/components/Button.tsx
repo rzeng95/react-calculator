@@ -3,6 +3,7 @@ import { Colors, isOperator } from 'src/utils';
 
 interface Props {
   value: number | string;
+  onClick: () => void;
 }
 
 interface ContainerProps {
@@ -33,9 +34,13 @@ const Value = styled.div({
   color: Colors.WHITE,
 });
 
-export const Button = ({ value }: Props) => {
+export const Button = ({ value, onClick }: Props) => {
   return (
-    <Container isZero={value === 0} isSymbol={isOperator(value)}>
+    <Container
+      isZero={value === 0}
+      isSymbol={isOperator(value)}
+      onClick={onClick}
+    >
       <Value>{value}</Value>
     </Container>
   );

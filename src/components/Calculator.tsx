@@ -1,6 +1,9 @@
 import styled from '@emotion/styled';
 import { Button } from './Button';
-import { Colors, Symbol } from 'src/utils';
+import { Colors, Symbol, createExpression, isNumber } from 'src/utils';
+import { useCallback, useState } from 'react';
+import { Output } from './Output';
+import axios, { AxiosError } from 'axios';
 
 const Container = styled.div({
   border: '1px solid black',
@@ -17,29 +20,104 @@ const ButtonsGrid = styled.div({
   justifyItems: 'center',
 });
 
+const BUTTON_ROWS = [
+  7,
+  8,
+  9,
+  Symbol.DIVIDE,
+
+  4,
+  5,
+  6,
+  Symbol.MULTIPLY,
+
+  1,
+  2,
+  3,
+  Symbol.ADD,
+
+  0, // takes up two column widths (see Button css)
+  Symbol.DECIMAL,
+  Symbol.EQUAL,
+];
+
 export const Calculator = () => {
+  const [input, setInput] = useState('');
+
+  const submit = useCallback(async () => {
+    try {
+      const { data } = await axios.post(
+        'http://api.mathjs.org/v4/',
+        {
+          expr: createExpression(input),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      console.log('oh yay!', data);
+    } catch (err) {
+      console.log('oh no!', err);
+      alert(
+        [
+          `[${(err as any)?.response?.status}]`,
+          (err as any)?.response?.statusText,
+          '-',
+          (err as any)?.response?.data?.error,
+        ].join(' ')
+      );
+    }
+  }, [input]);
+
+  const handleButtonClick = useCallback(
+    (value: string) => {
+      if (value === Symbol.EQUAL) {
+        return submit();
+      }
+
+      return setInput((prev) => {
+        const parts = prev.split(' ');
+
+        const lastPart = parts.pop();
+
+        if (isNumber(lastPart) && isNumber(value)) {
+          // concat new number to previous number
+          return [...parts, `${lastPart}${value}`].join(' ');
+        }
+
+        if (
+          lastPart?.split('')?.includes(Symbol.DECIMAL) &&
+          value === Symbol.DECIMAL
+        ) {
+          // no-op multiple decimal inputs
+          return [...parts, lastPart].join(' ');
+        }
+
+        if (isNumber(lastPart) && value === Symbol.DECIMAL) {
+          // concat decimal to previous number
+          return [...parts, `${lastPart}${value}`].join(' ');
+        }
+
+        return [...parts, lastPart, value].join(' ');
+      });
+    },
+    [submit]
+  );
+
   return (
     <Container>
+      <button onClick={() => setInput('')}>clear</button>
+      <Output text={input} />
       <ButtonsGrid>
-        <Button value={7} />
-        <Button value={8} />
-        <Button value={9} />
-        <Button value={Symbol.DIVIDE} />
-
-        <Button value={4} />
-        <Button value={5} />
-        <Button value={6} />
-        <Button value={Symbol.MULTIPLY} />
-
-        <Button value={1} />
-        <Button value={2} />
-        <Button value={3} />
-        <Button value={Symbol.ADD} />
-
-        {/* 0 takes up two column widths (see Button css) */}
-        <Button value={0} />
-        <Button value={Symbol.DECIMAL} />
-        <Button value={Symbol.EQUAL} />
+        {BUTTON_ROWS.map((value) => (
+          <Button
+            key={value}
+            value={value}
+            onClick={() => handleButtonClick(value as string)}
+          />
+        ))}
       </ButtonsGrid>
     </Container>
   );
