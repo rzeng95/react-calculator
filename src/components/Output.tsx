@@ -8,7 +8,8 @@ interface Props {
 const Container = styled.div({
   marginTop: '24px',
   marginBottom: '24px',
-  maxWidth: '470px',
+  width: '100%',
+  textAlign: 'right',
   textWrap: 'wrap',
   height: '40px',
 });

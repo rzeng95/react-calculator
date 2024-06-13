@@ -6,6 +6,7 @@ import {
   createExpression,
   isNumber,
   isOperator,
+  waitAsync,
 } from 'src/utils';
 import { useCallback, useState } from 'react';
 import { Output } from './Output';
@@ -28,7 +29,7 @@ const ButtonsGrid = styled.div({
 });
 
 const BUTTON_ROWS = [
-  'Clear', // takes up three column widths (see Button css)
+  Symbol.CLEAR, // takes up three column widths (see Button css)
   Symbol.DIVIDE,
 
   7,
@@ -52,11 +53,11 @@ const BUTTON_ROWS = [
 ];
 
 export const Calculator = () => {
-  const [leftOperand, setLeftOperand] = useState('');
-  const [rightOperand, setRightOperand] = useState('');
-  const [operator, setOperator] = useState('');
-
-  const [input, setInput] = useState('');
+  const [leftOperand, setLeftOperand] = useState<string>('');
+  const [rightOperand, setRightOperand] = useState<string>('');
+  const [operator, setOperator] = useState<string>('');
+  const [input, setInput] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleClear = useCallback(() => {
     setInput('');
@@ -66,13 +67,11 @@ export const Calculator = () => {
   }, []);
 
   const submit = useCallback(async () => {
-    console.log('submit', {
-      leftOperand,
-      operator,
-      rightOperand,
-    });
-
     try {
+      setLoading(true);
+
+      await waitAsync(300);
+
       const { data } = await axios.post(
         'http://api.mathjs.org/v4/',
         {
@@ -91,7 +90,9 @@ export const Calculator = () => {
       setInput(result);
       setOperator('');
       setRightOperand('');
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       alert(
         [
           `[${(err as any)?.response?.status}]`,
@@ -164,11 +165,14 @@ export const Calculator = () => {
       />
 
       <Output text={input} />
+
       <ButtonsGrid>
         {BUTTON_ROWS.map((value) => (
           <CalculatorButton
             key={value}
             value={value}
+            loading={loading}
+            operatorSelected={value === operator}
             onClick={() => handleButtonClick(value as string)}
           />
         ))}
