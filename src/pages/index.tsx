@@ -1,4 +1,5 @@
-import Head from "next/head";
+import Head from 'next/head';
+import { Calculator, PageContainer } from 'src/components';
 
 export default function Home() {
   return (
@@ -9,7 +10,9 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main>
-        <div>hello</div>
+        <PageContainer>
+          <Calculator />
+        </PageContainer>
       </main>
     </>
   );
