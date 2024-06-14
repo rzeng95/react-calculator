@@ -25,7 +25,8 @@ export const isOperator = (input: string | number | undefined) => {
 };
 
 export const isNumber = (input: string | undefined) => {
-  if (!input) {
+  if (input === undefined) {
+    // skip input = 0, which is falsy
     return false;
   }
 
