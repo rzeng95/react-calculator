@@ -112,13 +112,12 @@ export const Calculator = () => {
         const parts = prev.split(' ');
 
         // ex: the input "5 x 3 + 1" would be separated into ["5", "x", "3", "+", 1]
-
         if (parts[0] === '' && isOperator(value)) {
           // no-op if first value is an operator
           return prev;
         }
 
-        if (parts[0] === '' && isNumber(value)) {
+        if (parts[0] === '') {
           // input is empty - set to value
           return `${value}`; // make this a string, since prev.split(' ') won't work if prev is a number
         }
@@ -147,6 +146,12 @@ export const Calculator = () => {
 
         if (isNumber(mostRecentPart) && value === Symbol.DECIMAL) {
           // concat decimal to existing number
+          setExpression('');
+          return [...parts, `${mostRecentPart}${value}`].join(' ');
+        }
+
+        if (mostRecentPart === Symbol.DECIMAL && isNumber(value)) {
+          // concat number to existing decimal if decimal is purely "."
           setExpression('');
           return [...parts, `${mostRecentPart}${value}`].join(' ');
         }

@@ -48,7 +48,7 @@ export const CalculatorButton = ({ value, onClick, loading }: Props) => {
       onClick={!loading ? onClick : () => {}}
     >
       {loading && value === Symbol.EQUAL ? (
-        <ClipLoader color={Colors.ORANGE_HOVER} loading={true} size={30} />
+        <ClipLoader color={Colors.ORANGE_HOVER} loading size={30} />
       ) : (
         <Value>{value}</Value>
       )}
