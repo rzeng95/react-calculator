@@ -25,6 +25,10 @@ export const isOperator = (input: string | number | undefined) => {
 };
 
 export const isNumber = (input: string | undefined) => {
+  if (!input) {
+    return false;
+  }
+
   return !isNaN(parseInt(input as string, 10));
 };
 

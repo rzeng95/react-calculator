@@ -10,26 +10,26 @@ interface Props {
 
 interface ContainerProps {
   value: number | string;
-  isZero: boolean;
-  isSymbol: boolean;
 }
 
-const Container = styled.div(({ value, isZero, isSymbol }: ContainerProps) => {
+const Container = styled.div(({ value }: ContainerProps) => {
   return {
     width: '100%',
     height: '100px',
-    borderRadius: isZero || value === Symbol.CLEAR ? '30px' : '50%',
+    borderRadius: value === 0 || value === Symbol.CLEAR ? '30px' : '50%',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: isSymbol ? Colors.ORANGE : Colors.MEDIUMGREY,
+    backgroundColor: isOperator(value) ? Colors.ORANGE : Colors.MEDIUMGREY,
     '&:hover': {
-      backgroundColor: isSymbol ? Colors.ORANGE_HOVER : Colors.MEDIUMGREY_HOVER,
+      backgroundColor: isOperator(value)
+        ? Colors.ORANGE_HOVER
+        : Colors.MEDIUMGREY_HOVER,
     },
     cursor: 'pointer',
     transition: '0.2s',
     gridColumn:
-      value === Symbol.CLEAR ? 'span 3' : isZero ? 'span 2' : 'span 1',
+      value === Symbol.CLEAR ? 'span 3' : value === 0 ? 'span 2' : 'span 1',
   };
 });
 
@@ -41,14 +41,9 @@ const Value = styled.div({
 
 export const CalculatorButton = ({ value, onClick, loading }: Props) => {
   return (
-    <Container
-      value={value}
-      isZero={value === 0}
-      isSymbol={isOperator(value)}
-      onClick={!loading ? onClick : () => {}}
-    >
+    <Container value={value} onClick={!loading ? onClick : () => {}}>
       {loading && value === Symbol.EQUAL ? (
-        <ClipLoader color={Colors.ORANGE_HOVER} loading size={30} />
+        <ClipLoader color={Colors.WHITE} size={30} loading />
       ) : (
         <Value>{value}</Value>
       )}
