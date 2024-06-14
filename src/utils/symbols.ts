@@ -13,9 +13,14 @@ const Operators: string[] = [
   Symbol.MULTIPLY,
   Symbol.ADD,
   Symbol.MINUS,
+  Symbol.EQUAL,
 ];
 
-export const isOperator = (input: string | number) => {
+export const isOperator = (input: string | number | undefined) => {
+  if (!input) {
+    return false;
+  }
+
   return Operators.includes(input as string);
 };
 

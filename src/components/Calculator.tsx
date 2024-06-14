@@ -11,7 +11,6 @@ import {
 import { useCallback, useState } from 'react';
 import { Output } from './Output';
 import axios from 'axios';
-import { Debug } from './Debug';
 
 const Container = styled.div({
   border: '1px solid black',
@@ -53,29 +52,24 @@ const BUTTON_ROWS = [
 ];
 
 export const Calculator = () => {
-  const [leftOperand, setLeftOperand] = useState<string>('');
-  const [rightOperand, setRightOperand] = useState<string>('');
-  const [operator, setOperator] = useState<string>('');
   const [input, setInput] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [expression, setExpression] = useState<string>('');
 
   const handleClear = useCallback(() => {
     setInput('');
-    setOperator('');
-    setLeftOperand('');
-    setRightOperand('');
   }, []);
 
   const submit = useCallback(async () => {
     try {
       setLoading(true);
 
-      await waitAsync(300);
+      await waitAsync(200); // prevent flash of loading content
 
       const { data } = await axios.post(
         'http://api.mathjs.org/v4/',
         {
-          expr: createExpression(`${leftOperand} ${operator} ${rightOperand}`),
+          expr: createExpression(input),
         },
         {
           headers: {
@@ -86,11 +80,9 @@ export const Calculator = () => {
 
       const { result } = data;
 
-      setLeftOperand(result);
       setInput(result);
-      setOperator('');
-      setRightOperand('');
       setLoading(false);
+      setExpression(input);
     } catch (err) {
       setLoading(false);
       alert(
@@ -102,69 +94,74 @@ export const Calculator = () => {
         ].join(' ')
       );
     }
-  }, [leftOperand, operator, rightOperand]);
+  }, [input]);
 
   const handleButtonClick = useCallback(
     async (value: string) => {
       if (value === Symbol.CLEAR) {
+        setExpression('');
         return handleClear();
       }
+
       if (value === Symbol.EQUAL) {
+        setExpression('');
         return submit();
       }
 
-      if (isOperator(value) && operator && rightOperand) {
-        // calculate first
-        await submit();
+      return setInput((prev) => {
+        const parts = prev.split(' ');
 
-        return setOperator(value);
-      } else if (isOperator(value)) {
-        return setOperator(value);
-      }
+        // ex: the input "5 x 3 + 1" would be separated into ["5", "x", "3", "+", 1]
 
-      let newInput = input;
+        if (parts[0] === '' && isOperator(value)) {
+          // no-op if first value is an operator
+          return prev;
+        }
 
-      if (operator && !rightOperand) {
-        // reset input when switching to rightOperand
-        newInput = '';
-      }
+        if (parts[0] === '' && isNumber(value)) {
+          // input is empty - set to value
+          return `${value}`; // make this a string, since prev.split(' ') won't work if prev is a number
+        }
 
-      if (isNumber(newInput) && isNumber(value)) {
-        // concat new number to previous number
-        newInput = `${newInput}${value}`;
-      } else if (
-        newInput.includes(Symbol.DECIMAL) &&
-        value === Symbol.DECIMAL
-      ) {
-        // no-op multiple decimal inputs
-        newInput = newInput;
-      } else if (isNumber(newInput) && value === Symbol.DECIMAL) {
-        // contact decimal to existing number
-        newInput = `${newInput}${value}`;
-      } else {
-        newInput = `${value}`;
-      }
+        const mostRecentPart = parts.pop();
 
-      setInput(newInput);
+        if (
+          mostRecentPart?.includes(Symbol.DECIMAL) &&
+          value === Symbol.DECIMAL
+        ) {
+          // no-op if current number already includes a decimal
+          return prev;
+        }
 
-      if (leftOperand && operator) {
-        setRightOperand(newInput);
-      } else if (!operator) {
-        setLeftOperand(newInput);
-      }
+        if (isOperator(mostRecentPart) && isOperator(value)) {
+          // replace existing latest operator with newest input operator
+          setExpression('');
+          return [...parts, value].join(' ');
+        }
+
+        if (isNumber(mostRecentPart) && isNumber(value)) {
+          // concat new number to previous number
+          setExpression('');
+          return [...parts, `${mostRecentPart}${value}`].join(' ');
+        }
+
+        if (isNumber(mostRecentPart) && value === Symbol.DECIMAL) {
+          // concat decimal to existing number
+          setExpression('');
+          return [...parts, `${mostRecentPart}${value}`].join(' ');
+        }
+
+        // otherwise, the new value is an operator and should be inserted after the latest part
+        setExpression('');
+        return [...parts, mostRecentPart, value].join(' ');
+      });
     },
-    [handleClear, input, leftOperand, operator, rightOperand, submit]
+    [handleClear, submit]
   );
 
   return (
     <Container>
-      <Debug
-        leftOperand={leftOperand}
-        rightOperand={rightOperand}
-        operator={operator}
-      />
-
-      <Output text={input} />
+      <Output text={input} expression={expression} />
 
       <ButtonsGrid>
         {BUTTON_ROWS.map((value) => (
@@ -172,7 +169,6 @@ export const Calculator = () => {
             key={value}
             value={value}
             loading={loading}
-            operatorSelected={value === operator}
             onClick={() => handleButtonClick(value as string)}
           />
         ))}
