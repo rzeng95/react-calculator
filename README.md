@@ -13,4 +13,4 @@ yarn run dev
 
 # navigate to localhost:3000 on your web browser
 ```
-<img alt="screenshot" src="https://raw.githubusercontent.com/rzeng95/react-calculator/implementation/assets/react-calculator-screenshot.png" />
+<img alt="screenshot" src="https://raw.githubusercontent.com/rzeng95/react-calculator/refs/heads/main/assets/react-calculator-screenshot.png" />
